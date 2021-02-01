@@ -13,7 +13,7 @@ from bert4keras.optimizers import Adam
 from bert4keras.snippets import sequence_padding, DataGenerator
 from bert4keras.snippets import open, ViterbiDecoder, to_array
 from bert4keras.layers import ConditionalRandomField
-from keras.layers import Dense
+from keras.layers import Dense, Bidirectional, LSTM
 from keras.models import Model
 from tqdm import tqdm
 
@@ -71,7 +71,7 @@ print(os.getcwd())
 train_data = load_data('data/processed/train.txt')
 train_data = [train_data[0]]
 valid_data = [train_data[0]]
-test_data = [load_data('data/processed/test.txt')[0]]
+test_data = load_data('data/processed/test.txt')
 
 
 # 建立分词器
@@ -138,6 +138,8 @@ model = build_transformer_model(
 
 output_layer = 'Transformer-%s-FeedForward-Norm' % (bert_layers - 1)
 output = model.get_layer(output_layer).output
+# BiLSTM
+output = Bidirectional(LSTM(output.shape[-1], return_sequences=True, return_state=False))(output)
 output = Dense(num_labels)(output)
 CRF = ConditionalRandomField(lr_multiplier=crf_lr_multiplier)
 output = CRF(output)
@@ -199,16 +201,18 @@ def evaluate(data):
 
     test_data = json.load(open(test_file, 'r'))
 
+    result_data = list()
+
     for sen_idx in range(len(entities_list)):
         entities_set = entities_list[sen_idx]
         ens = list()
         for n, t in entities_set:
             if t!= labels[-1]:
                 ens.append(n+'-'+t)
-        test_data[sen_idx]['entities'] = ens
+        result_data.append({'id': test_data[sen_idx]['id'], 'entities': ens})
 
     with open(test_result_file, 'w') as f:
-        json.dump(test_data, f, ensure_ascii=False, indent=4)
+        json.dump(result_data, f, ensure_ascii=False, indent=4)
 
 
 class Evaluator(keras.callbacks.Callback):

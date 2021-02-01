@@ -13,15 +13,15 @@ from bert4keras.optimizers import Adam
 from bert4keras.snippets import sequence_padding, DataGenerator
 from bert4keras.snippets import open, ViterbiDecoder, to_array
 from bert4keras.layers import ConditionalRandomField
-from keras.layers import Dense
+from keras.layers import Dense, LSTM, Bidirectional
 from keras.models import Model
 from tqdm import tqdm
 
 maxlen = 256
 epochs = 10
-batch_size = 32
+batch_size = 2
 bert_layers = 12
-learning_rate = 1e-5  # bert_layers越小，学习率应该要越大
+learning_rate = 3e-5  # bert_layers越小，学习率应该要越大
 crf_lr_multiplier = 1000  # 必要时扩大CRF层的学习率
 
 # bert配置
@@ -135,6 +135,7 @@ model = build_transformer_model(
 
 output_layer = 'Transformer-%s-FeedForward-Norm' % (bert_layers - 1)
 output = model.get_layer(output_layer).output
+output = Bidirectional(LSTM(output.shape[-1], return_sequences=True, return_state=False))(output)
 output = Dense(num_labels)(output)
 CRF = ConditionalRandomField(lr_multiplier=crf_lr_multiplier)
 output = CRF(output)

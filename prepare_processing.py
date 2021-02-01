@@ -9,15 +9,20 @@ def prepare_data():
     train_data = json.load(open(train_file, 'r'))
     test_data = json.load(open(test_file, 'r'))
     entities_dict = dict()
+
+    max_length = 0
     for i in train_data:
         entities = i.get('entities', [])
         for e in entities:
             label = e.split('-')[1]
             entities_dict[label] = entities_dict.get(label, 0)+1
             # entities_set.add(e.split('-')[1])
+        text = i.get('text', '')
+        max_length = max(len(text), max_length)
     print(entities_dict)
     print('training data\'s length: {}'.format(len(train_data)))
     print('testing data\'s length: {}'.format(len(test_data)))
+    print('max length: {}'.format(max_length))
 
 def label_data():
     train_data = json.load(open(train_file, 'r'))
@@ -74,6 +79,6 @@ def label_test_data():
     print('finished!')
 
 if __name__=='__main__':
-    # prepare_data()
+    prepare_data()
     # label_data()
-    label_test_data()
+    # label_test_data()
