@@ -1,9 +1,5 @@
 import json
-from util.common_util import find_all
-
-
-train_file = 'data/bmes_train.json'
-test_file = 'data/bmes_test.json'
+from util.common_util import *
 
 train_file_processed = 'data/processed/bmes_train.csv'
 
@@ -55,7 +51,29 @@ def label_data():
                 f.write(texts[i][j]+' '+results[i][j]+'\n')
             f.write('\n')
 
+def label_test_data():
+    train_data = json.load(open(test_file, 'r'))
+    # test_data = json.load(open(test_file, 'r'))
+
+    texts=[]
+    results = []
+
+    for i in train_data:
+        # entities = i.get('entities', [])
+        text = i.get('text', '')
+        texts.append(list(text))
+        # labels_indices = dict()
+        result = ['OTH']*len(text)
+        results.append(result)
+
+    with open('data/processed/test.txt', 'w') as f:
+        for i in range(len(texts)):
+            for j in range(len(texts[i])):
+                f.write(texts[i][j]+' '+results[i][j]+'\n')
+            f.write('\n')
+    print('finished!')
 
 if __name__=='__main__':
     # prepare_data()
-    label_data()
+    # label_data()
+    label_test_data()

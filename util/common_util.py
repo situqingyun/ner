@@ -27,3 +27,8 @@ def find_all(s, sub):
         return index_list
     else:
         return -1
+
+train_file = 'data/bmes_train.json'
+test_file = 'data/bmes_test.json'
+
+test_result_file = 'result/test_result.json'

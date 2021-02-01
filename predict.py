@@ -17,6 +17,8 @@ from keras.layers import Dense
 from keras.models import Model
 from tqdm import tqdm
 
+import json
+
 maxlen = 256
 epochs = 10
 batch_size = 32
@@ -67,9 +69,10 @@ import os
 # os.chdir('..')
 print(os.getcwd())
 train_data = load_data('data/processed/train.txt')
-valid_data = train_data[len(train_data)-490:]
-train_data = train_data[:len(train_data)-490]
-# test_data = load_data('data/china-people-daily-ner-corpus/example.test')
+train_data = [train_data[0]]
+valid_data = [train_data[0]]
+test_data = [load_data('data/processed/test.txt')[0]]
+
 
 # 建立分词器
 tokenizer = Tokenizer(dict_path, do_lower_case=True)
@@ -185,16 +188,27 @@ NER = NamedEntityRecognizer(trans=K.eval(CRF.trans), starts=[0], ends=[0])
 def evaluate(data):
     """评测函数
     """
-    X, Y, Z = 1e-10, 1e-10, 1e-10
+    # X, Y, Z = 1e-10, 1e-10, 1e-10
+
+    entities_list = list()
     for d in tqdm(data):
         text = ''.join([i[0] for i in d])
         R = set(NER.recognize(text))
-        T = set([tuple(i) for i in d if i[1] != 'O'])
-        X += len(R & T)
-        Y += len(R)
-        Z += len(T)
-    f1, precision, recall = 2 * X / (Y + Z), X / Y, X / Z
-    return f1, precision, recall
+
+        entities_list.append(R)
+
+    test_data = json.load(open(test_file, 'r'))
+
+    for sen_idx in range(len(entities_list)):
+        entities_set = entities_list[sen_idx]
+        ens = list()
+        for n, t in entities_set:
+            if t!= labels[-1]:
+                ens.append(n+'-'+t)
+        test_data[sen_idx]['entities'] = ens
+
+    with open(test_result_file, 'w') as f:
+        json.dump(test_data, f, ensure_ascii=False, indent=4)
 
 
 class Evaluator(keras.callbacks.Callback):
@@ -216,24 +230,16 @@ class Evaluator(keras.callbacks.Callback):
             'valid:  f1: %.5f, precision: %.5f, recall: %.5f, best f1: %.5f\n' %
             (f1, precision, recall, self.best_val_f1)
         )
-        # f1, precision, recall = evaluate(test_data)
-        # print(
-        #     'test:  f1: %.5f, precision: %.5f, recall: %.5f\n' %
-        #     (f1, precision, recall)
-        # )
+        f1, precision, recall = evaluate(test_data)
+        print(
+            'test:  f1: %.5f, precision: %.5f, recall: %.5f\n' %
+            (f1, precision, recall)
+        )
 
 
 if __name__ == '__main__':
 
-    evaluator = Evaluator()
-    train_generator = data_generator(train_data, batch_size)
-
-    model.fit(
-        train_generator.forfit(),
-        steps_per_epoch=len(train_generator),
-        epochs=epochs,
-        callbacks=[evaluator]
-    )
+    evaluate(test_data)
 
 else:
 
