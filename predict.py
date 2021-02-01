@@ -238,10 +238,7 @@ class Evaluator(keras.callbacks.Callback):
 
 
 if __name__ == '__main__':
-
-    evaluate(test_data)
-
-else:
-
     model.load_weights('./best_model.weights')
     NER.trans = K.eval(CRF.trans)
+    evaluate(test_data)
+
